@@ -57,7 +57,7 @@ Ciphertext * EMultC(Ciphertext * ct, mpf_t  constant, PublicKey * pk);
 Ciphertext * eMultC(Ciphertext * ct, mpf_t  constant, PublicKey *pk);
 Ciphertext * eMultCL2(Ciphertext * ct, mpf_t constant, PublicKey *pk);
 element_t* EMultCElement(element_t el, mpz_t constant, PublicKey * pk);
-Plaintext * EMult(Ciphertext * ct1, Ciphertext * ct2, PublicKey * pk, Ciphertext * cipher, SecretKey *sk);
+Ciphertext * EMult(Ciphertext * ct1, Ciphertext * ct2, PublicKey * pk, Ciphertext * cipher, SecretKey *sk);
 element_t* EMultCElementL2(element_t el1, mpz_t constant, PublicKey *pk);
 element_t* EMultElements(element_t el1, element_t el2, PublicKey* pk);
 Ciphertext * MakeL2(Ciphertext *ct, PublicKey *pk);

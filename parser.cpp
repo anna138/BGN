@@ -73,7 +73,7 @@ double encrypt_genomic_data_sam(std::string filename, int numberSequences, Publi
   
     //bgn.keygen(PaillierKeyLength_32bit);
 
-    const unsigned int maxSequenceLength = 4;
+    const unsigned int maxSequenceLength = 200;
     Ciphertext** data_enc = new Ciphertext*[maxSequenceLength];
     double countA = 0.0, countC = 0.0, countG = 0.0, countT = 0.0;
     FILE *samencFile;
@@ -84,7 +84,7 @@ double encrypt_genomic_data_sam(std::string filename, int numberSequences, Publi
     //Need to add this in instead of ofstream because the 
     //element_out_str() in pbc library will read file pointers not ofstream
 
-   // std::cout << std::setiosflags(std::ios::fixed) << std::setprecision(12);
+    std::cout << std::setiosflags(std::ios::fixed) << std::setprecision(12);
    
     // process tab delimited lines
     std::string item;
@@ -108,12 +108,12 @@ double encrypt_genomic_data_sam(std::string filename, int numberSequences, Publi
         // 10th item is data to encrypt
         std::getline(ls, item, '\t');
         unsigned int n = item.length();
-      /*  for (unsigned int i = 0; i < n; i++) { // print original
+        for (unsigned int i = 0; i < n; i++) { // print original
             std::cout << item[i];
         }
         std::cout << std::endl;
         std::cout << ":";
-     */ fprintf(samencFile, ":");
+        fprintf(samencFile, ":");
      
        /* if (useGPU) { // GPU
             QueryPerformanceCounter(&t0);
@@ -135,28 +135,28 @@ double encrypt_genomic_data_sam(std::string filename, int numberSequences, Publi
                 if(x == 0){
                         countA++;
                 }
-                if(x == 1){
+                else if(x == 1){
                         countC++;
                 }
-                if(x == 2){
+                else if(x == 2){
                         countG++;
                 }
-                if(x == 3){
+                else if(x == 3){
                         countT++;
                 }
                   //Encrypts all ACGTs 
-//                data_enc[i] = Encrypt(NewPlaintext(pk,mf), pk);
+                data_enc[i] = Encrypt(NewPlaintext(pk,mf), pk);
             }
             //QueryPerformanceCounter(&t1);
         }
         //inserts all Encrypted ACGTs into samencFile
-        /*for (unsigned int i = 0; i < n; i++) {
+        for (unsigned int i = 0; i < n; i++) {
                 for(unsigned int j = 0; j < data_enc[i]->Degree; j++){
                         //element_printf(" %B:",  data_enc[i]->Coefficients[j]);
                         element_fprintf(samencFile, "%B:", data_enc[i]->Coefficients[j]);
 
                 }
-        }*/
+        }
         fprintf(samencFile, "\t");
         
         //n_total += n;

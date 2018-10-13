@@ -67,15 +67,6 @@ double max(double x, double y){
         return(x > y) ? x : y;
 }
 void NewKeyGen(int keyBits, mpz_t T, int polyBase, int fpScaleBase, double fpPrecision, bool deterministic, PublicKey * pk, SecretKey * sk){
-
-/*
-
-Summary: 
-
-BGN is a pairing-based cryptosystem using pairings from the pbc's elliptic curve: y^2 = x^3 + x. The New Key Gen function will generate two random numbers: q1 and q2 and it will multiply the two random numbers called n. Then we multiply n by the message space and we will store it into n. It will generate the A1 curv from PBC library which is the curve previously mentioned then we set up curves over the field Fq. afterwards a param (various pairings under Fq) for the curve. then we extract the value l from the A1 curve which carries the variables: p, n, and l (which is the small integer) using the parse from l function.
-
-*/
-
         if(keyBits < 16){
                 perror("key bits must be >= 16 bits in length");
         }
@@ -157,7 +148,6 @@ BGN is a pairing-based cryptosystem using pairings from the pbc's elliptic curve
         constructPublicKey(pk, &pairing, G1, P, Q, N, T, polyBase, fpScaleBase, fpPrecision,deterministic);
         constructSecretKey(sk, q1, polyBase);
 
-	/*clearing memory*/
         mpz_clear(l);
         mpz_clear(q1);
         mpz_clear(q2);
@@ -179,11 +169,6 @@ BGN is a pairing-based cryptosystem using pairings from the pbc's elliptic curve
 
 /*Encrypt a given plaintext (integer or rational) polynomial with the public key pk)*/
 Ciphertext * Encrypt(Plaintext *pt, PublicKey * pk){
-/* 
-
-Encrypt is similar to the usual, using pairing-based. Note: values of r as described in Add and Multiply functions are obtained through this function. Please see EAdd for clarification
-
-*/
           element_t * encryptedCoefficients = (element_t *)(malloc(pt->Degree*(sizeof(element_t))));
           
           int i;
@@ -245,14 +230,6 @@ element_t* AInvElementL2(element_t el, PublicKey * pk){
 }
 
 Ciphertext * EAdd(Ciphertext * ciphertext1, Ciphertext * ciphertext2, PublicKey * pk){
-
-/*
-
-The Add function will take two ciphertexts and with the public key h element to encrypt the result of the two ciphertexts for addition (r is a randomly generated number less than n-1 as obtained from Encryption function). The Formula is as follows:
-
-C1C2h^r = (g^m1 *h^r1) *(g^m2 * h^r2 ) * h^r = g^(m1 + m2) h^(r1 + r2 + r)
-
-*/
         if(ciphertext1->L2|| ciphertext2->L2){
                 if(!ciphertext1->L2){
                         return EAddL2(MakeL2(ciphertext1,pk), ciphertext2,pk); 
@@ -308,6 +285,7 @@ mpz_t* DecodeSign(mpz_t m, PublicKey * pk){
                 mpz_sub(m, m, pk->T);
         }
         mpz_init_set(*temp, m);
+        gmp_printf("temp: %Zd\n",*temp);
         return temp;
 }
 Plaintext * Decrypt(Ciphertext * ct, PublicKey * pk, SecretKey * sk){
@@ -360,8 +338,8 @@ mpz_t* DecryptElementL2 (element_t el, PublicKey * pk, bool failed, SecretKey *s
         pairing_apply(gsk, pk->P, pk->P, pair);
        
         element_pow_mpz(gsk, gsk, sk->Key);
-        element_init_same_as(csk, el);
-        element_set (csk, el);
+        element_init_same_as(csk, gsk); //el
+        element_set (csk, gsk); //el
         element_pow_mpz(csk, el , sk->Key);
        
         mpz_t * pt = (mpz_t*)malloc(sizeof(mpz_t));
@@ -515,27 +493,7 @@ element_t* EMultCElement(element_t el, mpz_t constant, PublicKey * pk){
         }
         return res;
 }
-Plaintext * EMult(Ciphertext * ct1, Ciphertext * ct2, PublicKey * pk, Ciphertext * cipher, SecretKey * sk){
-/*
-The EMult Function uses two ciphertexts, one is the order (cyclic group) of q1 and the other is the order of N as previously established: 
-
-g1 = e(g,g) 
-h1 = e(g,h) 
-
-We will then apply some unknown alpha which is an integer such that: 
-
-h = g^(alpha * q2). 
-
-Onto the math part: 
-
-C = e(C1,C2)h1^r
-  = e(g^m1*h^r1 , g^m2h^r2) * h1^r 
-  = e(g^(m1+ (alpha* q2 *r1), g^(m2+ (alpha * q2 * r2)) * h1^r 
-  = e(g,g)^(m1 + alpha * q2 * r1) * (m2 + alpha * q2 * r2) h1^r 
-  = e(g, g)^m1 * m2 + alpha * q2 * (m1 * r2+m2 * r1+alpha * q2* r1* r2) * h1 ^ r 
-  = e(g, g)^(m1 * m2) * h1^ (r + (m1 * r2 + m2 * r1 + alpha * q2* r1* r2)
-
-*/
+Ciphertext * EMult(Ciphertext * ct1, Ciphertext * ct2, PublicKey * pk, Ciphertext * cipher, SecretKey * sk){
         clock_t t;
         t = clock();
         int degree, i, k, index; degree = ct1->Degree + ct2->Degree;
@@ -544,10 +502,11 @@ C = e(C1,C2)h1^r
         element_t* result = (element_t*)malloc(degree*sizeof(element_t)); 
         pairing_t pair;
         pairing_init_pbc_param(pair, params); 
+	element_t temp;
         for(i = 0; i < degree; i++){
-                element_init_GT(*(result+i), pair);
-                element_init_same_as(result[i], result[i]);
-                element_set(result[i], result[i]);
+                element_init_GT(temp, pair);
+                element_init_same_as(result[i], temp);
+                element_set(result[i], temp);
         }
          
         element_t * tempMult; element_t *tempAdd;
@@ -562,11 +521,14 @@ C = e(C1,C2)h1^r
         }
         constructCiphertext(cipher, result, degree, ct1->ScaleFactor + ct2->ScaleFactor, true);
         t = clock() - t;
-        printf ("It took me EMULT (%f seconds).\n",((float)t)/CLOCKS_PER_SEC);
-        Plaintext * pt;
-
-        pt = Decrypt(cipher, pk, sk);
-        return pt;
+	element_t temp11;	
+	element_init_same_as(temp11,cipher->Coefficients[0]);
+	printf ("It took me EMULT (%f seconds).\n",((float)t)/CLOCKS_PER_SEC);
+        for(int i = 0; i < degree; i++)
+                element_printf("element[%d]: %B \n", i, cipher->Coefficients[i]); 
+	Plaintext * pt;
+       // pt = Decrypt(cipher, pk, sk);
+        return cipher;
 }
 element_t* EMultCElementL2(element_t el, mpz_t constant, PublicKey *pk){
         element_t * res = (element_t*)malloc(sizeof(element_t));
@@ -737,7 +699,8 @@ element_t* EAddElements(element_t coeff1, element_t coeff2, PublicKey *pk){
         element_t * result = (element_t*)malloc(sizeof(element_t));
         element_t h1;
         element_init_same_as(*result, pk->G1);
-        element_mul(*result, coeff1, coeff2);
+        element_set(*result, *result);
+	element_mul(*result, coeff1, coeff2);
         if(pk->Deterministic){
                 return result;
         }
@@ -857,7 +820,7 @@ mpz_t *parseLFromPBCParams(pbc_param_t params){
         while(find_l != EOF){
                 find_l = getc(outfile);
                 if(find_l == 'l'){
-                      fscanf(outfile, "%" PRId64, &l);
+                      fscanf(outfile, "%lld", &l);
                 }
         }
         fclose(outfile);

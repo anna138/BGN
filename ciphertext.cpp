@@ -1,3 +1,4 @@
+
 /*This is Ciphertext.c*/
 #include <stdlib.h>
 #include <time.h>
@@ -13,9 +14,11 @@ void constructCiphertext(Ciphertext *that, element_t *coeff, int degree, int sfa
         int i;
         
         for(i = 0; i < degree; i++){
-                element_init_same_as(that->Coefficients[i], coeff[i]);
+//		element_printf("[Element: %d] %B \n\n\n", i+1, coeff[i]);                
+		element_init_same_as(that->Coefficients[i], coeff[i]);
+		printf("got here\n");
                 element_set(that->Coefficients[i], coeff[i]);
-                //element_printf("[Element: %d] %B \n", i+1, that->Coefficients[i]);
+               // element_printf("[Element: %d] %B \n", i+1, that->Coefficients[i]);
         }//may change this to dynamic
 
         that->Degree = degree;

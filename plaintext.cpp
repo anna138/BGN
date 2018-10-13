@@ -14,8 +14,7 @@ mpz_t * degreeSumTable;
 mpz_t * degreeTable;
 int computedBase;
 
-
-const int degreeBound = 10;
+const int degreeBound = 128;
 
 /*
 Will be adding NTRU polynomial conversion function on plaintext.c
@@ -42,7 +41,7 @@ Plaintext * NewUnbalancedPlaintext(PublicKey *pk, float m){
         Plaintext * pt = (Plaintext*)malloc(sizeof(Plaintext));
         /*
         This is only for floating point numbers. We don't need it for Genomic Data
-
+*/
         if (fmod(mFloat, 1.0) !=0.0){
                 mFloat = (double)rand() / (double)RAND_MAX;
                 rationalize(floor(mFloat), pk->FPScaleBase, pk->FPPrecision, &numerator, &scaleFactor);
@@ -57,7 +56,7 @@ Plaintext * NewUnbalancedPlaintext(PublicKey *pk, float m){
                 constructPlaintext(pt, pk, coeffs,degree,scaleFactor);
                 return pt;
         }
-        */
+        
                 mpz_t mInt;
                 mpz_init(mInt);
                 mpz_init_set_d(mInt, m);
@@ -72,18 +71,20 @@ Plaintext * NewPlaintext(PublicKey * pk, mpf_t m){
         if(degreeTable == 0){
                 perror("Encoding tables are not computed");
         }
-
-        double mFloat = (double)rand() / (double)RAND_MAX;
+        double mFloat = mpf_get_d(m);
+        
         
         Plaintext * pt = (Plaintext*)malloc(sizeof(Plaintext));
 
         int64_t * coeffs; int degree;
-        /*
+        
         if (fmod(mFloat, 1.0) != 0.0){
                 int64_t numerator; int scaleFactor;
                 
-                rationalize(floor(mFloat), pk->FPScaleBase, pk->FPPrecision, &numerator, &scaleFactor);
+                rationalize(mFloat-floor(mFloat), pk->FPScaleBase, pk->FPPrecision, &numerator, &scaleFactor);
+
                 mpz_t mInt;  
+                mpz_init(mInt);
                 mpz_t tmp;
                 double tmp2 = pow((double)pk->FPScaleBase, (double)scaleFactor);
                 mpz_init_set_d(tmp, tmp2);
@@ -91,19 +92,18 @@ Plaintext * NewPlaintext(PublicKey * pk, mpf_t m){
                 mpz_t temp;
                 mpz_init_set_d(temp, numerator);
                 mpz_add(mInt, mInt, temp);
-                printf("encoded"); 
+                gmp_printf("encoded %Ff as %Zd / %Zd tmp2 %d \n",m,mInt,tmp, scaleFactor); 
                 
                 coeffs = balancedEncode(mInt, pk->PolyBase, degreeTable, degreeSumTable, &degree);
                 constructPlaintext(pt, pk, coeffs,degree,scaleFactor);
                 return pt;
        }
-       */
+       
 
                 mpz_t mInt;
                 mpz_init(mInt);
                 mpz_set_f(mInt, m);
                 coeffs = balancedEncode(mInt, pk->PolyBase, degreeTable, degreeSumTable, &degree);
-                //printf("DEGREE: %d\n",degree);
                 constructPlaintext(pt, pk, coeffs,degree, 0);
                 return pt;
 }
@@ -116,7 +116,6 @@ void computeEncodingTable(PublicKey * pk){
         mpz_t sum;
         mpz_init_set_si(sum, 1);
         mpz_init_set_si(degreeSumTable[0], 1);
-        //gmp_printf("\n106- DegreeSum: %Zd \n", degreeSumTable[0]);
         mpz_init_set_si(degreeTable[0], 1);
         int i;
         mpz_t result;
@@ -135,12 +134,10 @@ void computeEncodingTable(PublicKey * pk){
                 mpz_init_set(degreeTable[i], result);
                 mpz_init_set_si(degreeSumTable[i], 0);
                 mpz_init_set(degreeSumTable[i], sum);
-                //gmp_printf("125- DegreeSum: %Zd \n", degreeSumTable[i]);
         }
         mpz_clear(base);
         mpz_clear(sum);
         mpz_clear(result);
-        //gmp_printf("This is the end of the function");
         
 }
 int degree(mpz_t target, mpz_t * sums, int bound, bool balanced){
@@ -151,7 +148,6 @@ int degree(mpz_t target, mpz_t * sums, int bound, bool balanced){
         if(balanced){
                 int i;
                 for(i = 1; i <=bound; i++){
-                        //gmp_printf("The degreeSumTable[i]: %Zd \n Target: %Zd \n", degreeSumTable[i], target);
                         if(mpz_cmp(degreeSumTable[i], target) >= 0){
                                 return i;
                         }
@@ -165,7 +161,6 @@ int degree(mpz_t target, mpz_t * sums, int bound, bool balanced){
                         }
                 }
         }
-        //printf("MINUS ONE Line 152\n");
         return -1;
 }
 int64_t * unbalancedEncode(mpz_t target, int base, mpz_t * degrees, mpz_t * sumDegrees, int * encodeInt){ 
@@ -317,13 +312,14 @@ int64_t * reverse(int64_t * numbers, int size){
 void rationalize(double x, int base, double precision, int64_t * numb, int * pew){
         int factor = floor(x);
 
-        x = 1.0 + fmod(x, 1.0);
-
+        x = 1.0 + remainder(x, 1.0);
+        printf("x: %f\n", x);
         if(abs(x) > 1.0){
                 x += 1.0;
         }
         if(x >= 0.0){
                 x -= (double)((int)x);
+                printf("x: %f\n", x);
         }
         else if(x <= 0.0){
                 x += (double)((int)x);
@@ -333,24 +329,23 @@ void rationalize(double x, int base, double precision, int64_t * numb, int * pew
         double temp = 1.0; 
         /*this is pew double to later be casted as int, 
         pew variable is used as work around to return*/
-        x = 1; //testing
+       // x = 1; //testing
         double qmin = x - precision;
         double qmax = x + precision;
          
         double denom = 0.0;
         double rat = 0.0;
-        int loop = 0;
 
-        //printf("QMin: %f \n QMax: %f \n Demon: %f \n Rat: %f \n", qmin,qmax,denom,rat); 
         while(1){
                 denom = pow((double)(base), temp);
                 rat = num/denom;
 
-                //printf("QMin: %f \n QMax: %f \n Demon: %f \n Rat: %f \n", qmin,qmax,denom,rat);
                 if(rat <= qmax && rat >= qmin){
+
                         while(((int)(num) % base) == 0){
                                 num = num/(double)(base);
                                 temp--;
+
                         }
                         denom = pow((double)base, temp);
                         *pew = (int)temp;
@@ -359,15 +354,12 @@ void rationalize(double x, int base, double precision, int64_t * numb, int * pew
                 }
                 //*pew = (int)temp;
                 if(num+1 >= denom){
-                        num = (double)1;
-                        temp = temp + 1.0;
+                        num = 1;
+                        temp = temp + 1;
                         //*pew++;
                 }
-                loop++;
                 num++; //num++
-                //printf("Loop: %d \n\n QMin: %f \n QMax: %f \n Demon: %f \n Rat: %f \n Num: %f \n Base: %d \n Temp: %f, Pew: %d", loop,qmin,qmax,denom,rat,num, base, temp, *pew); 
         }
-        //gmp_printf("This is the end of Rationalize");
 }
 mpf_t * PolyEval(Plaintext * p){
         mpf_t * acc = (mpf_t*)malloc(sizeof(mpf_t));
@@ -388,6 +380,12 @@ mpf_t * PolyEval(Plaintext * p){
         for(i = p->Degree-1; i >=0; i--){
                 var1 = (var1 * p->Pk->PolyBase) + p->Coefficients[i];
         } 
+
+        if(p->ScaleFactor != 0){
+                int64_t scale = pow((int64_t)p->Pk->FPScaleBase, (int64_t)p->ScaleFactor);                 
+                double denom = (double)scale;
+                var1 = var1/denom;
+        }
         std::cout << "This is var: " << var1 << std::endl;
 
         return acc;
