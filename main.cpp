@@ -28,7 +28,7 @@ int main(){
         std::cout << "Press enter to continue..." << std::endl;
         std::cin.get();
 
-        std::string filename = "HG00176.sam";
+        std::string filename = "../HG00176.sam";
         
         int keyBits = 256; // length of q1 and q2
         mpz_t messageSpace;
@@ -64,6 +64,7 @@ int main(){
 */
         t = clock();
         double t_avg_cpu = encrypt_genomic_data_sam(filename,5, &pk);
+	printf("%f\n",t_avg_cpu);
         t = clock() - t;
         printf ("It took encrypt_genomic_data (%f seconds).\n",((float)t)/CLOCKS_PER_SEC);
         
@@ -124,8 +125,8 @@ int main(){
         allele3.ScaleFactor = 0;
         allele3.L2 = false;
         
-        Ciphertext *aB, *aC, *bD, *cD, *total;
-        Plaintext *pt0, *pt1, *pt2, *pt3, *ptotal;
+        Ciphertext *aB = nullptr, *aC = nullptr, *bD = nullptr, *cD = nullptr, *total = nullptr;
+        //Plaintext *pt0, *pt1, *pt2, *pt3, *ptotal;
         fishersExact(&pk,&sk, &allele0, &allele1, &allele2, &allele3, aB, aC, bD, cD, total);
      //  */
        /* pt0 = Decrypt(aB, &pk, &sk);

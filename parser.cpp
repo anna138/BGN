@@ -90,7 +90,7 @@ double encrypt_genomic_data_sam(std::string filename, int numberSequences, Publi
     std::string item;
     int sequence = 0;
     //BigUnsigned t_total; // in ns
-    unsigned int n_total = 0;
+ //   unsigned int n_total = 0;
     while (std::getline(genomeFile, line) && (sequence < numberSequences)) {
         // ignore header lines
         if (line[0] == '@') {
@@ -101,7 +101,7 @@ double encrypt_genomic_data_sam(std::string filename, int numberSequences, Publi
         // go through first 9 items
         for (unsigned int i = 0; i < 9; i++) {
             std::getline(ls, item, '\t');
-            for(int j = 0; j < item.length(); j++){
+            for(unsigned int j = 0; j < item.length(); j++){
                 fprintf(samencFile, " %c \t", item[j]);
             }
         }
@@ -151,7 +151,7 @@ double encrypt_genomic_data_sam(std::string filename, int numberSequences, Publi
         }
         //inserts all Encrypted ACGTs into samencFile
         for (unsigned int i = 0; i < n; i++) {
-                for(unsigned int j = 0; j < data_enc[i]->Degree; j++){
+                for( int j = 0; j < data_enc[i]->Degree; j++){
                         //element_printf(" %B:",  data_enc[i]->Coefficients[j]);
                         element_fprintf(samencFile, "%B:", data_enc[i]->Coefficients[j]);
 
@@ -187,7 +187,7 @@ double encrypt_genomic_data_sam(std::string filename, int numberSequences, Publi
         
         //inserts all counts into countFile
         for(unsigned int i = 0; i < 4; i++) {
-                for(unsigned int j = 0; j < count_enc[i]->Degree; j++){
+                for(int j = 0; j < count_enc[i]->Degree; j++){
                         element_fprintf(countFile, "%B\n", count_enc[i]->Coefficients[j]);
                 }
                 fprintf(countFile, ":\n");

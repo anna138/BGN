@@ -508,7 +508,7 @@ Ciphertext * EMult(Ciphertext * ct1, Ciphertext * ct2, PublicKey * pk, Ciphertex
                 element_set(result[i], temp);
         }
          
-        element_t * tempMult; element_t *tempAdd;
+       // element_t * tempMult; element_t *tempAdd;
         for(i = ct1->Degree - 1; i >= 0; i--){
                 for(k = ct2->Degree - 1; k >= 0; k--){
                        index = i + k;
@@ -646,7 +646,7 @@ mpz_t* RecoverMessageWithDL(element_t gsk, element_t csk, bool l2, PublicKey *pk
 }
 
 element_t* ESubElements(element_t coeff1, element_t coeff2, PublicKey * pk){
-        element_t * result;
+        element_t * result = (element_t*)malloc(sizeof(element_t));
         element_init_same_as(*result, pk->G1);
         element_div(*result, coeff1, coeff2);
         if(pk->Deterministic){
