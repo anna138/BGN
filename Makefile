@@ -5,7 +5,7 @@ CC      := g++
 LDLIBS  := -lgmp -lsodium -lm -lpbc
 INC     := -I /usr/local/include -I /usr/local/include/pbc
 
-APPS    := multRun addRun runMain
+APPS    := runMain
 
 all: ${APPS}
 
