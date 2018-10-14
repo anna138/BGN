@@ -1,4 +1,3 @@
-#define PBC_DEBUG
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
