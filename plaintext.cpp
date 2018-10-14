@@ -230,7 +230,6 @@ int64_t * balancedEncode(mpz_t target, int base, mpz_t * degrees, mpz_t * sumDeg
         mpz_init(zero);
         mpz_t negone;
         mpz_init_set_si(negone, -1);
-        //gmp_printf("Plaintext.c Line:221 This is target: %Zd \nThis is zero %Zd \n", target, zero);
         /* This is the Special Case*/
         if((mpz_cmp(target, zero)) == 0){
                 int64_t * coefficients = (int64_t*)malloc(sizeof(int64_t));
@@ -277,7 +276,6 @@ int64_t * balancedEncode(mpz_t target, int base, mpz_t * degrees, mpz_t * sumDeg
                         if(isNegative){
                                 for(int i = 0; i <= bound; i++){
                                         coefficients[i] *= -1;
-                                        //gmp_printf("Coefficient: %lld", coefficients[i]);
                                 }
                         }
                         *encodeInt = bound + 1;

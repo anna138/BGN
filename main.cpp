@@ -191,20 +191,9 @@ void fishersExact(PublicKey * pk,SecretKey * sk ,Ciphertext * alleleA, Ciphertex
         std::cout << String(pt2) << std::endl;
         std::cout << String(pt3) << std::endl;
         std::cout << String(ptotal) << std::endl;
-        Ciphertext fs;
+	Ciphertext fs;
         Ciphertext * ci = EMult(aC,bD, pk,&fs,sk);
-	printf("here\n");	
-	element_printf("[Element: %d] %B \n\n\n", 0, ci->Coefficients[1]);                
-//	element_printf("[Element: %d] %B \n\n\n", 0, ci->Coefficients[1]);                
-//	element_printf("[Element: %d] %B \n\n\n", 0, ci->Coefficients[1]);                
-        for(int i = 0; i < ci->Degree; i++)
-		element_printf("element[%d]: %B \n", i, ci->Coefficients[i]);
         
-	element_t co;
-//	element_init_same_as(co,ci->Coefficients[0]);
-        for(int i = 0; i < ci->Degree; i++)
-		element_printf("element[%d]: %B \n", i, ci->Coefficients[i]);
-	//ci = Copy(&fs);
 	pt1 = Decrypt(ci,pk,sk);
         
         std::cout << String(pt1) << std::endl;

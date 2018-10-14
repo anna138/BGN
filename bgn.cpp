@@ -285,7 +285,6 @@ mpz_t* DecodeSign(mpz_t m, PublicKey * pk){
                 mpz_sub(m, m, pk->T);
         }
         mpz_init_set(*temp, m);
-        gmp_printf("temp: %Zd\n",*temp);
         return temp;
 }
 Plaintext * Decrypt(Ciphertext * ct, PublicKey * pk, SecretKey * sk){
@@ -521,13 +520,7 @@ Ciphertext * EMult(Ciphertext * ct1, Ciphertext * ct2, PublicKey * pk, Ciphertex
         }
         constructCiphertext(cipher, result, degree, ct1->ScaleFactor + ct2->ScaleFactor, true);
         t = clock() - t;
-	element_t temp11;	
-	element_init_same_as(temp11,cipher->Coefficients[0]);
 	printf ("It took me EMULT (%f seconds).\n",((float)t)/CLOCKS_PER_SEC);
-        for(int i = 0; i < degree; i++)
-                element_printf("element[%d]: %B \n", i, cipher->Coefficients[i]); 
-	Plaintext * pt;
-       // pt = Decrypt(cipher, pk, sk);
         return cipher;
 }
 element_t* EMultCElementL2(element_t el, mpz_t constant, PublicKey *pk){
