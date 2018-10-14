@@ -1,3 +1,4 @@
+#define PBC_DEBUG
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
@@ -30,21 +31,40 @@ int main(){
 
         std::string filename = "HG00176.sam";
         
-        int keyBits = 512; // length of q1 and q2
+        int keyBits = 256; // length of q1 and q2
         mpz_t messageSpace;
-        mpz_init_set_si(messageSpace, 1021);
+        mpz_init_set_si(messageSpace, 1201);//1021
+	
         int polyBase = 2; // base for the ciphertext polynomial
         int fpScaleBase = 2;
-        double fpPrecision = 0.0001;
+        double fpPrecision = 0.00000001;
         PublicKey pk;
         SecretKey sk;
         clock_t t;
         t = clock();
-        NewKeyGen(keyBits, messageSpace, polyBase, fpScaleBase, fpPrecision, true, &pk, &sk);        
+        NewKeyGen(keyBits, messageSpace, polyBase, fpScaleBase, fpPrecision, false, &pk, &sk);        
         t = clock() - t;
         printf ("It took NewKeyGen (%f seconds).\n",((float)t)/CLOCKS_PER_SEC);
+       /* Plaintext* pt;
+        mpf_t m;
+        mpf_init(m);
+        mpf_set_d(m,100000000000);
+        pt = NewPlaintext(&pk,m);
+        Ciphertext *ct = Encrypt(pt,&pk);
+        pt = Decrypt(ct,&pk,&sk); 
+        std::cout << String(pt) << std::endl; 
+        mpf_set_d(m,0.375);
+        pt = NewPlaintext(&pk,m);
+        Ciphertext *ct1 = Encrypt(pt,&pk);
+        Ciphertext ct2,ct3;
+        pt = EMult(ct,ct1,&pk,&ct2, &sk);
+        std::cout << String(pt) << std::endl; 
+        Ciphertext *ct4 = Encrypt(pt,&pk);
+        pt = EMult(ct1,ct4,&pk,&ct3, &sk);
+        std::cout << String(pt) << std::endl; 
+*/
         t = clock();
-        double t_avg_cpu = encrypt_genomic_data_sam(filename,10, &pk);
+        double t_avg_cpu = encrypt_genomic_data_sam(filename,5, &pk);
         t = clock() - t;
         printf ("It took encrypt_genomic_data (%f seconds).\n",((float)t)/CLOCKS_PER_SEC);
         
@@ -108,7 +128,7 @@ int main(){
         Ciphertext *aB, *aC, *bD, *cD, *total;
         Plaintext *pt0, *pt1, *pt2, *pt3, *ptotal;
         fishersExact(&pk,&sk, &allele0, &allele1, &allele2, &allele3, aB, aC, bD, cD, total);
-       
+     //  */
        /* pt0 = Decrypt(aB, &pk, &sk);
         pt1 = Decrypt(aC, &pk, &sk);
         pt2 = Decrypt(bD, &pk, &sk);
@@ -116,9 +136,9 @@ int main(){
         ptotal = Decrypt(total, &pk, &sk);
         */
         
-        /*Tingting and Steve, I needed to put Decrypt in the multiply function in order for it to work. 
+        /*Tingting, I needed to put Decrypt in the multiply function in order for it to work. 
         Otherwise it would segfault in main. This was my issue I mentioned earlier. 
-        I tried debugging and cleaning memory leaks on valgrind. 
+        I tried debugging and cleaning mememory leaks on valgrind. 
         I even tried to allocate memory for the Ciphertext on the stack and heap. 
         All did not work and I was unable to acces the Ciphertext's Coefficients from EMult to Decrypt.
         The same issue that occurs in the EMult function occurs in Fishers functions
@@ -141,16 +161,6 @@ int main(){
 
 }
 
-/*
-SEG FAULT ISSUE:
-
-Tingting and Steve, 
-The reason why I had to put Decrypt and EMult in the same function under fishers exact is because for some reason I am unable to use the ciphertext's coefficient in main to return the result or else it will segfault. 
-
-Please use mainaddtest.cpp to see functions work normally for addition function.
-Please use mainmulttest.cpp to see functions segfault in multiply.
-
-*/
 void fishersExact(PublicKey * pk,SecretKey * sk ,Ciphertext * alleleA, Ciphertext * alleleB, Ciphertext * alleleC, Ciphertext * alleleD, Ciphertext *aB, Ciphertext *aC, Ciphertext *bD, Ciphertext *cD, Ciphertext *total){
         //write a reader for the seq
 
@@ -182,7 +192,23 @@ void fishersExact(PublicKey * pk,SecretKey * sk ,Ciphertext * alleleA, Ciphertex
         std::cout << String(pt3) << std::endl;
         std::cout << String(ptotal) << std::endl;
         Ciphertext fs;
-        EMult(aC,bD, pk,&fs,sk);
+        Ciphertext * ci = EMult(aC,bD, pk,&fs,sk);
+	printf("here\n");	
+	element_printf("[Element: %d] %B \n\n\n", 0, ci->Coefficients[1]);                
+//	element_printf("[Element: %d] %B \n\n\n", 0, ci->Coefficients[1]);                
+//	element_printf("[Element: %d] %B \n\n\n", 0, ci->Coefficients[1]);                
+        for(int i = 0; i < ci->Degree; i++)
+		element_printf("element[%d]: %B \n", i, ci->Coefficients[i]);
+        
+	element_t co;
+//	element_init_same_as(co,ci->Coefficients[0]);
+        for(int i = 0; i < ci->Degree; i++)
+		element_printf("element[%d]: %B \n", i, ci->Coefficients[i]);
+	//ci = Copy(&fs);
+	pt1 = Decrypt(ci,pk,sk);
+        
+        std::cout << String(pt1) << std::endl;
+        
 }
 /*
 Ciphertext * bayesCompute(PublicKey pk, Ciphertext * alleleA, Ciphertext * alleleB, Ciphertext * alleleNB){ //P(A|B)
