@@ -1,17 +1,19 @@
 #include <stdlib.h>
 #include <time.h>
 #include <stdio.h>
-#include <gmp.h>
-#include <pbc.h>
-#include <sodium.h>
 #include <math.h>
 #include <cstdlib>
 #include <iostream>
-//pbc_param_t params;
 
 #include "plaintext.h"
 #include "bgn.h"
 #include "ciphertext.h"
+
+#include <gmp.h>
+#include <sodium.h>
+#include <pbc/pbc.h>
+
+//pbc_param_t params;
 
 void fishersExact(int64_t alleleA, int64_t allele2, int64_t allele3, int64_t allele4, double &ab, double &ac, double &bd, double &cd);
 

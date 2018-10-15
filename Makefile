@@ -1,6 +1,6 @@
 .PHONY: clean
 
-CFLAGS  := -Wall -g -std=c++0x -D_GNU_SOURCE
+CFLAGS  := -Wall -O3 -std=c++0x -D_GNU_SOURCE
 CC      := g++
 LDLIBS  := -lgmp -lsodium -lm -lpbc
 INC     := -I /usr/local/include -I /usr/local/include/pbc
