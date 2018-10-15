@@ -1,6 +1,9 @@
 //
 // bgn.cpp
 //
+#ifndef PARAL
+#define PARAL 0
+#endif 
 #include <inttypes.h>
 #include <stdlib.h>
 #include <time.h>
@@ -14,7 +17,7 @@
 #include <gmp.h>
 #include <sodium.h>
 #include <pbc/pbc.h>
-
+#include <omp.h>
 pbc_param_t params;
 
 void constructPublicKey(PublicKey *that, pairing_t* par, element_t g1,
@@ -191,22 +194,42 @@ Ciphertext * Encrypt(Plaintext *pt, PublicKey * pk)
     element_t * encryptedCoefficients = (element_t *) (malloc(
             pt->Degree * (sizeof(element_t))));
 
-    int i;
+    omp_set_num_threads(pt->Degree - 1);
+    int i = 0;
     mpz_t coeff; /*struct Plaintext pt;*/
-    element_t * temp;
-    for(i = 0; i < pt->Degree; i++) {
-        if(pt->Coefficients[i] < 0) {
-            mpz_init_set_d(coeff, (double) (-1 * pt->Coefficients[i]));
-            temp = ESubElements(*encryptZero(pk), *EncryptElement(coeff, pk),
-                                pk);
-            element_init_same_as(encryptedCoefficients[i], *temp);
-            element_set(encryptedCoefficients[i], *temp);
-        } else {
-            mpz_init_set_d(coeff, (double) (pt->Coefficients[i]));
-            temp = EncryptElement(coeff, pk);
-            element_init_same_as(encryptedCoefficients[i], *temp);
-            element_set(encryptedCoefficients[i], *temp);
-        }
+    mpz_init(coeff);
+    element_t * temp;	
+    if(PARAL){
+	    #pragma omp for private(coeff, temp) schedule(static, 1)
+	    for(i = 0; i < pt->Degree;i++) {
+		if(pt->Coefficients[i] < 0) {
+		    mpz_init_set_d(coeff, (double) (-1 * pt->Coefficients[i]));
+		    temp = ESubElements(*encryptZero(pk), *EncryptElement(coeff, pk),
+		                        pk);
+		    element_init_same_as(encryptedCoefficients[i], *temp);
+		    element_set(encryptedCoefficients[i], *temp);
+		} else {
+		    mpz_init_set_d(coeff, (double) (pt->Coefficients[i]));
+		    temp = EncryptElement(coeff, pk);
+		    element_init_same_as(encryptedCoefficients[i], *temp);
+		    element_set(encryptedCoefficients[i], *temp);
+		}
+	    }
+     }else{
+	for(i = 0; i < pt->Degree; i++) {
+		if(pt->Coefficients[i] < 0) {
+		    mpz_init_set_d(coeff, (double) (-1 * pt->Coefficients[i]));
+		    temp = ESubElements(*encryptZero(pk), *EncryptElement(coeff, pk),
+		                        pk);
+		    element_init_same_as(encryptedCoefficients[i], *temp);
+		    element_set(encryptedCoefficients[i], *temp);
+		} else {
+		    mpz_init_set_d(coeff, (double) (pt->Coefficients[i]));
+		    temp = EncryptElement(coeff, pk);
+		    element_init_same_as(encryptedCoefficients[i], *temp);
+		    element_set(encryptedCoefficients[i], *temp);
+		}
+	    }
     }
     Ciphertext * ct = (Ciphertext *) malloc(1 * sizeof(Ciphertext));
     constructCiphertext(ct, encryptedCoefficients, pt->Degree, pt->ScaleFactor,
@@ -281,24 +304,47 @@ Ciphertext * EAdd(Ciphertext * ciphertext1, Ciphertext * ciphertext2,
     int degree = (int) (max((double) (ct1->Degree), (double) (ct2->Degree)));
     element_t * result = (element_t*) malloc((degree) * (sizeof(element_t)));
     int i;
-    for(i = 0; i < degree; i++) {
-        if(ct2->Degree > i && ct1->Degree > i) {
-            element_t * temp = EAddElements(ct1->Coefficients[i],
-                                            ct2->Coefficients[i], pk);
-            element_init_same_as(result[i], *temp);
-            element_set(result[i], *temp);
-            continue;
-        }
-        if(i >= ct2->Degree) {
+    if(PARAL){
+	    #pragma omp parallel for schedule(auto)
+	    for(i = 0; i < degree; i++) {
+		if(ct2->Degree > i && ct1->Degree > i) {
+		    element_t *temp = EAddElements(ct1->Coefficients[i],
+		                                    ct2->Coefficients[i], pk);
+		    element_init_same_as(result[i], *temp);
+		    element_set(result[i], *temp);
+		    continue;
+		}
+		if(i >= ct2->Degree) {
 
-            element_init_same_as(result[i], ct1->Coefficients[i]);
-            element_set(result[i], ct1->Coefficients[i]);
-        }
-        if(i >= ct1->Degree) {
+		    element_init_same_as(result[i], ct1->Coefficients[i]);
+		    element_set(result[i], ct1->Coefficients[i]);
+		}
+		if(i >= ct1->Degree) {
 
-            element_init_same_as(result[i], ct2->Coefficients[i]);
-            element_set(result[i], ct2->Coefficients[i]);
-        }
+		    element_init_same_as(result[i], ct2->Coefficients[i]);
+		    element_set(result[i], ct2->Coefficients[i]);
+		}
+	    }
+    }else{
+	    for(i = 0; i < degree; i++) {
+		if(ct2->Degree > i && ct1->Degree > i) {
+		    element_t *temp = EAddElements(ct1->Coefficients[i],
+			                            ct2->Coefficients[i], pk);
+		    element_init_same_as(result[i], *temp);
+		    element_set(result[i], *temp);
+		    continue;
+		}
+		if(i >= ct2->Degree) {
+
+		    element_init_same_as(result[i], ct1->Coefficients[i]);
+		    element_set(result[i], ct1->Coefficients[i]);
+		}
+		if(i >= ct1->Degree) {
+
+		    element_init_same_as(result[i], ct2->Coefficients[i]);
+		    element_set(result[i], ct2->Coefficients[i]);
+		}
+	    }
     }
     Ciphertext * ct = (Ciphertext*) malloc(sizeof(Ciphertext));
     constructCiphertext(ct, result, degree, ct1->ScaleFactor, ct1->L2);
@@ -326,14 +372,23 @@ Plaintext * Decrypt(Ciphertext * ct, PublicKey * pk, SecretKey * sk)
     int size;
     size = ct->Degree;
     int64_t * plaintextCoeffs = (int64_t *) malloc((size) * (sizeof(int64_t)));
+    
     int i;
-
-    for(i = 0; i < ct->Degree; i++) {
-        plaintextCoeffs[i] = (int64_t) mpz_get_d(
-                *DecodeSign(*DecryptElement(ct->Coefficients[i], pk, false, sk),
-                            pk));
+    omp_set_num_threads(ct->Degree - 1);
+    if(PARAL){
+	    #pragma omp parallel for shared(plaintextCoeffs) private(i) schedule(static, 1)
+	    for(i = 0; i < ct->Degree; i++) {
+		plaintextCoeffs[i] = (int64_t) mpz_get_d(
+		        *DecodeSign(*DecryptElement(ct->Coefficients[i], pk, false, sk),
+		                    pk));
+	    }
+    }else{
+	    for(i = 0; i < ct->Degree; i++) {
+		plaintextCoeffs[i] = (int64_t) mpz_get_d(
+		        *DecodeSign(*DecryptElement(ct->Coefficients[i], pk, false, sk),
+		                    pk));
+	    }
     }
-
     Plaintext * pt = (Plaintext*) malloc(sizeof(Plaintext));
     constructPlaintext(pt, pk, plaintextCoeffs, size, ct->ScaleFactor);
     return pt;
@@ -559,23 +614,38 @@ Ciphertext * EMult(Ciphertext * ct1, Ciphertext * ct2, PublicKey * pk,
     pairing_t pair;
     pairing_init_pbc_param(pair, params);
     element_t temp;
+    element_init_GT(temp, pair);
     for(i = 0; i < degree; i++) {
-        element_init_GT(temp, pair);
+   //     element_init_GT(temp, pair);
         element_init_same_as(result[i], temp);
         element_set(result[i], temp);
     }
 
-    // element_t * tempMult; element_t *tempAdd;
-    for(i = ct1->Degree - 1; i >= 0; i--) {
-        for(k = ct2->Degree - 1; k >= 0; k--) {
-            index = i + k;
-            coeff = EMultElements(ct1->Coefficients[i], ct2->Coefficients[k],
-                                  pk);
+    if(PARAL){
+	//  #pragma omp parallel for private(i,k,index) shared(result, coeff)
+	    for(i = ct1->Degree - 1; i >= 0; i--) {
+		for(k = ct2->Degree - 1; k >= 0; k--) {
+		    index = i + k;
+		    coeff = EMultElements(ct1->Coefficients[i], ct2->Coefficients[k],
+		                          pk);
 
-            element_set(result[index],
-                        *EAddL2Elements(result[index], *coeff, pk));
+		    element_set(result[index],
+		                *EAddL2Elements(result[index], *coeff, pk));
 
-        }
+		}
+	    }	
+    }else{
+	    for(i = ct1->Degree - 1; i >= 0; i--) {
+		for(k = ct2->Degree - 1; k >= 0; k--) {
+		    index = i + k;
+		    coeff = EMultElements(ct1->Coefficients[i], ct2->Coefficients[k],
+			                  pk);
+
+		    element_set(result[index],
+			        *EAddL2Elements(result[index], *coeff, pk));
+
+		}
+	    }
     }
     constructCiphertext(cipher, result, degree,
                         ct1->ScaleFactor + ct2->ScaleFactor, true);

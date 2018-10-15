@@ -121,6 +121,7 @@ double encrypt_genomic_data_sam(std::string filename, int numberSequences,
         mpf_init(mf);
         if(true) {  // CPU
             //   QueryPerformanceCounter(&t0);
+
             for(unsigned int i = 0; i < n; i++) {
                 char c = item.c_str()[i];
                 unsigned int x = c == nucleobase[0] ? nbCode[0] :
@@ -143,13 +144,18 @@ double encrypt_genomic_data_sam(std::string filename, int numberSequences,
             //QueryPerformanceCounter(&t1);
         }
         //inserts all Encrypted ACGTs into samencFile
-        for(unsigned int i = 0; i < n; i++) {
-            for(int j = 0; j < data_enc[i]->Degree; j++) {
-                //element_printf(" %B:",  data_enc[i]->Coefficients[j]);
+/*        for(unsigned int i = 0; i < n; i++) {
+            for(unsigned int j = 0; j < data_enc[i]->Degree; j++) {
                 element_fprintf(samencFile, "%B:",
                                 data_enc[i]->Coefficients[j]);
 
             }
+        }*/
+      //  fprintf(samencFile, "\t");
+	for (unsigned int i = 0; i < n; i++) {
+                for(int j = 0; j < data_enc[i]->Degree; j++){
+                        element_fprintf(samencFile, "%B:", data_enc[i]->Coefficients[j]);
+                }
         }
         fprintf(samencFile, "\t");
 
