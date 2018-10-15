@@ -1,7 +1,9 @@
 //
 // main.cpp
 //
+#include <cstdio>
 #include <cstdlib>
+#include <cmath>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -10,8 +12,7 @@
 #include <string>
 
 #include <time.h>
-#include <stdio.h>
-#include <math.h>
+#include <sys/time.h>
 
 #include <gmp.h>
 #include <sodium.h>
@@ -35,26 +36,60 @@ void fishersExact(PublicKey *pk, SecretKey * sk, Ciphertext * alleleA,
 
 int main()
 {
-    std::cout << "Press enter to continue..." << std::endl;
-    std::cin.get();
-
-    std::string filename = "../HG00176.sam";
-
-    int keyBits = 256;  // length of q1 and q2
+    clock_t t = 0;
+    int keyBits = 32;  // length of q1 and q2
     mpz_t messageSpace;
-    mpz_init_set_si(messageSpace, 1201);  //1021
-
+    int ms[10] = { 1009, 2003, 4001, 8009, 10007, 100003, 1000003, 10000019,
+            100000007, 1000000007 };
+    mpz_init_set_si(messageSpace, ms[0]);
     int polyBase = 2;  // base for the ciphertext polynomial
     int fpScaleBase = 2;
     double fpPrecision = 0.00000001;
     PublicKey pk;
     SecretKey sk;
-    clock_t t;
-    t = clock();
-    NewKeyGen(keyBits, messageSpace, polyBase, fpScaleBase, fpPrecision, false,
-              &pk, &sk);
-    t = clock() - t;
-    printf("It took NewKeyGen (%f seconds).\n", ((float) t) / CLOCKS_PER_SEC);
+
+    printf("Running tests...\n");
+    printf("----------\n");
+    printf("NewKeyGen: Test adjusting key bits\n");
+    keyBits = 32;  // 32 - 2048
+    while(keyBits <= 2048) {
+        t = clock();
+        NewKeyGen(keyBits, messageSpace, polyBase, fpScaleBase, fpPrecision,
+                  false, &pk, &sk);
+        t = clock() - t;
+        printf("NewKeyGen(keyBits=%d): t = %f\n", keyBits,
+               (float) t / CLOCKS_PER_SEC);
+        keyBits *= 2;
+    }
+    printf("----------\n");
+
+    printf("NewKeyGen: Test adjusting message space\n");
+    keyBits = 1024;
+    for(int i = 0; i < 10; i++) {
+        mpz_init_set_si(messageSpace, ms[i]);
+        t = clock();
+        NewKeyGen(keyBits, messageSpace, polyBase, fpScaleBase, fpPrecision,
+                  false, &pk, &sk);
+        t = clock() - t;
+        printf("NewKeyGen(ms=%d): t = %f\n", ms[i], (float) t / CLOCKS_PER_SEC);
+    }
+    printf("----------\n");
+
+    printf("NewKeyGen: Test adjusting poly base\n");
+    keyBits = 1024;
+    mpz_init_set_si(messageSpace, ms[0]);
+    polyBase = 2;
+    for(int i = 0; i < 10; i++) {
+        t = clock();
+        NewKeyGen(keyBits, messageSpace, polyBase, fpScaleBase, fpPrecision,
+                  false, &pk, &sk);
+        t = clock() - t;
+        printf("NewKeyGen(polyBase=%d): t = %f\n", polyBase,
+               (float) t / CLOCKS_PER_SEC);
+        polyBase++;
+    }
+    printf("----------\n");
+
     /* Plaintext* pt;
      mpf_t m;
      mpf_init(m);
@@ -73,12 +108,16 @@ int main()
      pt = EMult(ct1,ct4,&pk,&ct3, &sk);
      std::cout << String(pt) << std::endl;
      */
+    std::string filename = "../Genomic_Data/HG00176.sam";
+
+    printf("encrypt_genomic_data_sam: Running test...\n");
     t = clock();
     double t_avg_cpu = encrypt_genomic_data_sam(filename, 5, &pk);
     printf("%f\n", t_avg_cpu);
     t = clock() - t;
     printf("It took encrypt_genomic_data (%f seconds).\n",
            ((float) t) / CLOCKS_PER_SEC);
+    printf("----------\n");
 
     std::string countallele = "genocount.enc";
 
