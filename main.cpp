@@ -89,6 +89,13 @@ int main()
         polyBase++;
     }
     printf("----------\n");
+  
+    //gotta change polyBase to 2 or 3 and generate a key
+    //otherwise you are left with a polybase of 11
+    //and a polyBase of 11 cannot generate all numbers
+    polyBase = 3;
+    NewKeyGen(keyBits, messageSpace, polyBase, fpScaleBase, fpPrecision,
+              false, &pk, &sk);
 
     /* Plaintext* pt;
      mpf_t m;
